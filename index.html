@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Today's Events</title>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="300"> <!-- Auto-refresh every 5 minutes -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #000;
+      color: #fff;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .container {
+  max-height: 90vh;
+  overflow: hidden;
+  position: relative;
+      border: 3px solid #0f0;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 900px;
+      margin: auto;
+      background-color: #111;
+      box-shadow: 0 0 20px #0f0;
+    }
+
+    .event {
+      margin-bottom: 20px;
+      padding: 10px;
+      border-bottom: 1px solid #444;
+    }
+
+    .time {
+      font-weight: bold;
+      color: #0f0;
+    }
+
+    .location, .description {
+      margin-top: 5px;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Today's Calendar Events</h1>
+    <div id="events"></div>
+  </div>
+
+  <script>
+    const API_KEY = 'AIzaSyAQsALCP9M-myMRBMWEW_wn3FuQq8mpmls';
+    const CALENDAR_ID = 'perionsonos@gmail.com';
+
+    const today = new Date();
+    const isoStart = new Date(today.setHours(0, 0, 0, 0)).toISOString();
+    const isoEnd = new Date(today.setHours(23, 59, 59, 999)).toISOString();
+
+    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events?key=${API_KEY}&timeMin=${isoStart}&timeMax=${isoEnd}&singleEvents=true&orderBy=startTime`;
+
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        const eventsDiv = document.getElementById('events');
+        if (!data.items || data.items.length === 0) {
+          eventsDiv.innerHTML = '<p>No events today.</p>';
+          return;
+        }
+
+        data.items.forEach(event => {
+          const start = event.start.dateTime || event.start.date;
+          const end = event.end.dateTime || event.end.date;
+          const isAllDay = start.length <= 10;
+          let timeDisplay = "All day";
+
+          if (!isAllDay) {
+            const startTime = new Date(start).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            const endTime = new Date(end).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            timeDisplay = `${startTime} – ${endTime}`;
+          }
+
+          const div = document.createElement('div');
+          div.className = 'event';
+          div.innerHTML = `
+            <div class="time">${timeDisplay}</div>
+            <div class="summary">${event.summary || "No Title"}</div>
+            ${event.location ? `<div class="location">📍 ${event.location}</div>` : ''}
+            ${event.description ? `<div class="description">${event.description}</div>` : ''}
+          `;
+          eventsDiv.appendChild(div);
+        });
+      })
+      .catch(error => {
+        console.error('Error fetching events:', error);
+        document.getElementById('events').innerHTML = `<p>Error loading events.</p>`;
+      });
+
+      startAutoScroll(document.querySelector('.container'));
+
+      let scrollPos = 0;
+      const scrollSpeed = 1; // pixels per step
+      const scrollDelay = 50; // milliseconds per step
+
+      function startAutoScroll(container) {
+        setInterval(() => {
+          scrollPos += scrollSpeed;
+          if (scrollPos >= container.scrollHeight - container.clientHeight) {
+            scrollPos = 0; // Reset to top
+          }
+          container.scrollTop = scrollPos;
+        }, scrollDelay);
+      }
+
+  </script>
+</body>
+</html>
